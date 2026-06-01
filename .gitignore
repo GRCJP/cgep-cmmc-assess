@@ -13,5 +13,5 @@ crash.log
 terraform/lambda/handler.zip
 
 # Local
-evidence/
+terraform/**/evidence/
 .DS_Store
