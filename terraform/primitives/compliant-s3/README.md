@@ -1,0 +1,1 @@
+This module enforces SC-28, AU-3, AU-6, CM-6, AC-3 on a single S3 bucket. It creates a primary data bucket with AES-256 server-side encryption, versioning enabled, and all four public access block flags set to true. A separate log bucket receives S3 server access logs from the primary bucket for audit review.
