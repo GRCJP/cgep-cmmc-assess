@@ -1,27 +1,40 @@
 # Compliance Policies (Rego)
 
-Three OPA policies that run against `terraform plan -json` output. Each one maps to a NIST 800-53 control and blocks non-compliant resources before they get applied.
+OPA/Conftest policies that run against `terraform plan -json` output. Each one maps to a NIST 800-53 control and blocks non-compliant resources before they get applied. GCP and AWS variants share the same control IDs.
 
 ## Policies
 
-### SC-28 — Encryption at Rest (`sc28_encryption.rego`)
+### SC-28 — Encryption at Rest
+| File | Cloud | What it checks |
+|------|-------|----------------|
+| `sc28_encryption.rego` | GCP | Every `google_storage_bucket` has a CMEK encryption block. |
+| `sc28_encryption_aws.rego` | AWS | Every `aws_s3_bucket` has a matching `aws_s3_bucket_server_side_encryption_configuration`. |
 - **Severity:** high
-- **What it checks:** Every `google_storage_bucket` has a CMEK encryption block.
-- **Remediation:** Add `encryption { default_kms_key_name = ... }` pointing to a KMS key you control.
 
-### AC-3 — Access Enforcement (`ac3_no_public.rego`)
+### AC-3 — Access Enforcement
+| File | Cloud | What it checks |
+|------|-------|----------------|
+| `ac3_no_public.rego` | GCP | Buckets enforce uniform access and public access prevention. Firewalls don't open 22/3389 to `0.0.0.0/0`. |
+| `ac3_no_public_aws.rego` | AWS | Every `aws_s3_bucket` has a `aws_s3_bucket_public_access_block` with all four flags true. |
 - **Severity:** critical
-- **What it checks:** Buckets have `uniform_bucket_level_access = true` and `public_access_prevention = "enforced"`. Firewall rules don't open ports 22 or 3389 to `0.0.0.0/0`.
-- **Remediation:** Lock down bucket access settings. For firewalls, narrow `source_ranges` or remove the rule.
 
-### CM-6 — Required Labels (`cm6_required_tags.rego`)
+### CM-6 — Required Tags/Labels
+| File | Cloud | What it checks |
+|------|-------|----------------|
+| `cm6_required_tags.rego` | GCP | Every taggable resource has labels: `project`, `environment`, `managed_by`, `compliance_scope`. |
+| `cm6_required_tags_aws.rego` | AWS | Every taggable resource has tags: `Project`, `Environment`, `ManagedBy`, `ComplianceScope`. |
 - **Severity:** medium
-- **What it checks:** Every taggable resource has four labels: `project`, `environment`, `managed_by`, `compliance_scope`.
-- **Remediation:** Add the missing labels to the resource.
 
 ## Running
 
 ```bash
+# unit tests
 opa test -v policies/
+
+# eval against a plan
 opa eval -d policies -i <plan.json> data.compliance.<control>.deny --format=pretty
+
+# conftest gate (used by CI)
+conftest test --policy policies --namespace compliance.<control> <plan.json>
+bash scripts/policy-gate.sh --workspace <path>
 ```
