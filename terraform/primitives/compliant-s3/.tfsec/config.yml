@@ -1,0 +1,3 @@
+suppress_results:
+    - rule: aws-s3-encryption-customer-key
+      reason: "AES256 satisfies SC-28 for this lab; KMS upgrade planned for later"
